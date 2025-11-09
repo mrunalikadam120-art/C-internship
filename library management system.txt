@@ -1,0 +1,244 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <iomanip>
+using namespace std;
+
+// ----------------------------
+// Structures
+// ----------------------------
+
+struct Book {
+    string title;
+    string author;
+    string isbn;
+    bool available = true;
+};
+
+struct Borrower {
+    string name;
+    int borrowerID;
+};
+
+struct Transaction {
+    string isbn;
+    int borrowerID;
+    int daysBorrowed;
+    bool returned;
+};
+
+// ----------------------------
+// Functions
+// ----------------------------
+
+// Display the main menu
+void showMenu() {
+    cout << "\n📚 LIBRARY MANAGEMENT SYSTEM\n";
+    cout << "--------------------------------\n";
+    cout << "1. Add Book\n";
+    cout << "2. View Books\n";
+    cout << "3. Search Book\n";
+    cout << "4. Add Borrower\n";
+    cout << "5. View Borrowers\n";
+    cout << "6. Check Out Book\n";
+    cout << "7. Return Book\n";
+    cout << "8. View Transactions\n";
+    cout << "9. Exit\n";
+    cout << "Enter your choice: ";
+}
+
+// Add a new book
+void addBook(vector<Book> &books) {
+    Book b;
+    cin.ignore();
+    cout << "Enter Book Title: ";
+    getline(cin, b.title);
+    cout << "Enter Author: ";
+    getline(cin, b.author);
+    cout << "Enter ISBN: ";
+    getline(cin, b.isbn);
+    books.push_back(b);
+    cout << "✅ Book added successfully!\n";
+}
+
+// View all books
+void viewBooks(const vector<Book> &books) {
+    cout << "\n📖 BOOK LIST\n";
+    cout << "--------------------------------\n";
+    if (books.empty()) {
+        cout << "No books available.\n";
+        return;
+    }
+    cout << left << setw(25) << "Title" << setw(20) << "Author"
+         << setw(15) << "ISBN" << setw(10) << "Status" << "\n";
+    cout << "--------------------------------------------------------------\n";
+    for (const auto &b : books) {
+        cout << left << setw(25) << b.title << setw(20) << b.author
+             << setw(15) << b.isbn
+             << setw(10) << (b.available ? "Available" : "Issued") << "\n";
+    }
+}
+
+// Search for a book by title, author, or ISBN
+void searchBook(const vector<Book> &books) {
+    if (books.empty()) {
+        cout << "No books in the database.\n";
+        return;
+    }
+
+    cin.ignore();
+    string keyword;
+    cout << "Enter title, author, or ISBN to search: ";
+    getline(cin, keyword);
+
+    bool found = false;
+    for (const auto &b : books) {
+        if (b.title == keyword || b.author == keyword || b.isbn == keyword) {
+            cout << "\nBook Found:\n";
+            cout << "Title: " << b.title << "\nAuthor: " << b.author
+                 << "\nISBN: " << b.isbn
+                 << "\nStatus: " << (b.available ? "Available" : "Issued") << "\n";
+            found = true;
+        }
+    }
+    if (!found) cout << "❌ No book found matching that query.\n";
+}
+
+// Add a borrower
+void addBorrower(vector<Borrower> &borrowers) {
+    Borrower br;
+    cin.ignore();
+    cout << "Enter Borrower Name: ";
+    getline(cin, br.name);
+    br.borrowerID = borrowers.size() + 1;
+    borrowers.push_back(br);
+    cout << "✅ Borrower added successfully! ID = " << br.borrowerID << "\n";
+}
+
+// View borrowers
+void viewBorrowers(const vector<Borrower> &borrowers) {
+    cout << "\n👤 BORROWERS\n";
+    cout << "--------------------------------\n";
+    if (borrowers.empty()) {
+        cout << "No borrowers registered.\n";
+        return;
+    }
+    cout << left << setw(20) << "Name" << setw(10) << "ID" << "\n";
+    cout << "--------------------------------\n";
+    for (const auto &b : borrowers) {
+        cout << left << setw(20) << b.name << setw(10) << b.borrowerID << "\n";
+    }
+}
+
+// Check out a book
+void checkOutBook(vector<Book> &books, vector<Borrower> &borrowers, vector<Transaction> &transactions) {
+    if (books.empty() || borrowers.empty()) {
+        cout << "No books or borrowers available.\n";
+        return;
+    }
+
+    string isbn;
+    int id, days;
+    cout << "Enter Borrower ID: ";
+    cin >> id;
+    cout << "Enter Book ISBN: ";
+    cin >> isbn;
+    cout << "Enter number of days to borrow: ";
+    cin >> days;
+
+    bool found = false;
+    for (auto &b : books) {
+        if (b.isbn == isbn && b.available) {
+            b.available = false;
+            transactions.push_back({isbn, id, days, false});
+            cout << "✅ Book checked out successfully!\n";
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+        cout << "❌ Book not available or ISBN not found.\n";
+}
+
+// Return book and calculate fine
+void returnBook(vector<Book> &books, vector<Transaction> &transactions) {
+    string isbn;
+    int id, daysLate;
+    cout << "Enter Borrower ID: ";
+    cin >> id;
+    cout << "Enter Book ISBN: ";
+    cin >> isbn;
+    cout << "Enter number of days overdue (0 if none): ";
+    cin >> daysLate;
+
+    for (auto &t : transactions) {
+        if (t.isbn == isbn && t.borrowerID == id && !t.returned) {
+            t.returned = true;
+            for (auto &b : books) {
+                if (b.isbn == isbn) {
+                    b.available = true;
+                    break;
+                }
+            }
+            double fine = daysLate * 2.0; // Rs.2 per day
+            cout << "📚 Book returned successfully!\n";
+            if (fine > 0)
+                cout << "💰 Fine: Rs." << fine << "\n";
+            else
+                cout << "No fine. Thank you!\n";
+            return;
+        }
+    }
+
+    cout << "❌ Transaction not found.\n";
+}
+
+// View all transactions
+void viewTransactions(const vector<Transaction> &transactions) {
+    cout << "\n📜 TRANSACTIONS\n";
+    cout << "--------------------------------\n";
+    if (transactions.empty()) {
+        cout << "No transactions found.\n";
+        return;
+    }
+    cout << left << setw(15) << "ISBN" << setw(10) << "BorrowerID"
+         << setw(15) << "Days Borrowed" << setw(10) << "Status" << "\n";
+    cout << "----------------------------------------------\n";
+    for (const auto &t : transactions) {
+        cout << left << setw(15) << t.isbn
+             << setw(10) << t.borrowerID
+             << setw(15) << t.daysBorrowed
+             << setw(10) << (t.returned ? "Returned" : "Issued") << "\n";
+    }
+}
+
+// ----------------------------
+// MAIN FUNCTION
+// ----------------------------
+int main() {
+    vector<Book> books;
+    vector<Borrower> borrowers;
+    vector<Transaction> transactions;
+    int choice;
+
+    while (true) {
+        showMenu();
+        cin >> choice;
+
+        switch (choice) {
+            case 1: addBook(books); break;
+            case 2: viewBooks(books); break;
+            case 3: searchBook(books); break;
+            case 4: addBorrower(borrowers); break;
+            case 5: viewBorrowers(borrowers); break;
+            case 6: checkOutBook(books, borrowers, transactions); break;
+            case 7: returnBook(books, transactions); break;
+            case 8: viewTransactions(transactions); break;
+            case 9:
+                cout << "👋 Exiting Library Management System. Goodbye!\n";
+                return 0;
+            default: cout << "Invalid choice. Try again.\n";
+        }
+    }
+}
