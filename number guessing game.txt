@@ -1,0 +1,44 @@
+#include <iostream>
+#include <cstdlib>  // for rand() and srand()
+#include <ctime>    // for time()
+
+int main() {
+    // Seed the random number generator
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    // Generate a random number between 1 and 100
+    int numberToGuess = rand() % 100 + 1;
+    int userGuess;
+    int attempts = 0;
+
+    std::cout << "🎯 Welcome to Guess the Number Game!" << std::endl;
+    std::cout << "I'm thinking of a number between 1 and 100." << std::endl;
+
+    // Game loop
+    while (true) {
+        std::cout << "\nEnter your guess: ";
+        
+        // Input validation
+        if (!(std::cin >> userGuess)) {
+            std::cin.clear(); // clear the error flag
+            std::cin.ignore(10000, '\n'); // ignore invalid input
+            std::cout << "Invalid input! Please enter a number." << std::endl;
+            continue;
+        }
+
+        attempts++;
+
+        // Check the user's guess
+        if (userGuess < numberToGuess) {
+            std::cout << "Too low! Try again.";
+        } else if (userGuess > numberToGuess) {
+            std::cout << "Too high! Try again.";
+        } else {
+            std::cout << "\n🎉 Congratulations! You guessed the number in " 
+                      << attempts << " attempts." << std::endl;
+            break; // exit loop when correct
+        }
+    }
+
+    return 0;
+}
